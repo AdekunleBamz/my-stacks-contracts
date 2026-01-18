@@ -10,7 +10,7 @@
     "test:report": "vitest run -- --coverage --costs",
     "test:watch": "chokidar \"tests/**/*.ts\" \"contracts/**/*.clar\" -c \"npm run test:report\""
   },
-  "author": "",
+  "author": "Adekunle Bamz",
   "license": "ISC",
   "dependencies": {
     "@stacks/clarinet-sdk": "^3.9.0",
