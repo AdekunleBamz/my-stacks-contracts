@@ -1,17 +1,50 @@
 
 {
-  "name": "my-stacks-contracts-tests",
+  "name": "my-stacks-contracts",
   "version": "1.0.0",
-  "description": "Run unit tests on this project.",
-  "type": "module",
+  "description": "A Clarity dApp that lets users post short messages to the Stacks blockchain for a 1-satoshi sBTC fee",
   "private": true,
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
-    "test": "vitest run",
-    "test:report": "vitest run -- --coverage --costs",
-    "test:watch": "chokidar \"tests/**/*.ts\" \"contracts/**/*.clar\" -c \"npm run test:report\""
+    "install:all": "npm install && cd frontend && npm install",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "preview:frontend": "cd frontend && npm run preview",
+    "lint:frontend": "cd frontend && npm run lint",
+    "test": "npm run test",
+    "test:watch": "npm run test:watch",
+    "test:report": "npm run test:report",
+    "clarinet:check": "clarinet check",
+    "clarinet:test": "clarinet test",
+    "clarinet:console": "clarinet console",
+    "clarinet:integrate": "clarinet integrate"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/phessophissy/my-stacks-contracts.git"
+  },
+  "keywords": [
+    "stacks",
+    "clarity",
+    "blockchain",
+    "sbtc",
+    "message-board",
+    "smart-contracts",
+    "defi",
+    "web3"
+  ],
   "author": "Adekunle Bamz",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/phessophissy/my-stacks-contracts/issues"
+  },
+  "homepage": "https://github.com/phessophissy/my-stacks-contracts#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "type": "module",
   "dependencies": {
     "@stacks/clarinet-sdk": "^3.9.0",
     "@stacks/transactions": "^7.2.0",
