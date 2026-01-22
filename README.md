@@ -1,9 +1,9 @@
 # Stacks Message Board (sBTC)
 
-A Clarity dApp that lets users post short messages to the Stacks blockchain for a 1-satoshi sBTC fee. The contract tracks messages (content, author, burn block height, Stacks block time), enforces sBTC payment with post-conditions, verifies the sBTC contract hash, and allows the deployer to withdraw collected sBTC. A small React + Stacks Connect frontend is included for testnet.
+A Clarity dApp that lets users post short messages to the Stacks blockchain for a configurable sBTC fee (default: 1 satoshi). The contract tracks messages (content, author, burn block height, Stacks block time), enforces sBTC payment with post-conditions, rate-limits posts per principal, verifies the sBTC contract hash, and allows the deployer to withdraw collected sBTC. A small React + Stacks Connect frontend is included for testnet.
 
 ## Repo layout
-- `contracts/message-board.clar` — Clarity contract charging 1 sBTC to post and emitting an event for each message.
+- `contracts/message-board-v2.clar` — Clarity contract charging a configurable sBTC fee (default 1) to post and emitting an event for each message.
 - `tests/message-board.test.ts` — Vitest + Clarinet simnet tests for posting and owner withdrawals.
 - `deployments/default.*.yaml` — Clarinet deployment plans (simnet/testnet) including sBTC requirement contracts.
 - `settings/*.toml` — Devnet/testnet configuration and funded accounts for local work.
@@ -24,17 +24,20 @@ cd frontend && npm install
 ```
 
 ## Smart contract
-Key entrypoints in `message-board.clar`:
-- `add-message (content)` — Charges 1 satoshi of sBTC via post-condition; stores message with author, `burn-block-height`, and `stacks-block-time`; emits an event; returns message id.
+Key entrypoints in `message-board-v2.clar`:
+- `add-message (content)` — Charges the configured sBTC fee via post-condition; stores message with author, `burn-block-height`, and `stacks-block-time`; emits an event; returns message id.
+- `set-message-fee (fee)` — Deployer-only: set the sBTC fee (in satoshis) required to post. Must be `> 0`.
+- `set-min-post-interval (blocks)` — Deployer-only: set the minimum burn-block interval between posts per principal (default is `1`, preventing multiple posts in the same burn block).
 - `withdraw-funds` — Deployer-only withdrawal of accumulated sBTC to the contract owner.
 - `get-message` / `get-message-author` — Read a message or just its author by id.
 - `get-message-count-at-block (block)` — Historical message count at a given Stacks block using `at-block`.
+- `get-message-fee` / `get-min-post-interval` / `can-post-now (who)` — Read-only helpers for UI and monitoring.
 - `get-token-hash-status` — Read-only helper to compare the expected vs current sBTC contract hash.
 
 The contract depends on the sBTC token/registry/deposit requirement contracts (addresses provided in `deployments/default.testnet-plan.yaml`).
 
 ## Clarity 4 features used
-- `restrict-assets?` protects external calls while charging 1 sat of sBTC.
+- `restrict-assets?` protects external calls while charging the configured sBTC fee.
 - `stacks-block-time` recorded alongside `burn-block-height` for richer timestamps.
 - `contract-hash?` to pin and verify the sBTC token contract code.
 - `to-ascii?` to emit human-readable principals in events.
@@ -66,13 +69,13 @@ npm run dev
 ```
 What it does:
 - Connects a Stacks wallet via `@stacks/connect` and shows the BNS name (or address) for the connected account.
-- Calls `add-message` with a post-condition requiring the caller to pay 1 sBTC to the contract.
+- Calls `add-message` with a post-condition requiring the caller to pay the current message fee.
 - Includes a helper to query `get-message-count-at-block` via Hiro API (supply `x-api-key`).
 
 Frontend contract configuration lives inline in `src/App.tsx`; update the contract address/name and the Hiro API key placeholder before using in production.
 
 ## Notes & Gotchas
-- Posting requires 1 satoshi of sBTC; users must hold the token on the target network.
+- Posting requires the configured sBTC fee (default 1 satoshi); users must hold the token on the target network.
 - `withdraw-funds` is restricted to the contract deployer (`CONTRACT_OWNER`).
 - When changing epochs or Clarity versions, align `Clarinet.toml` and deployment plans.
 

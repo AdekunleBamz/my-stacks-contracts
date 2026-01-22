@@ -39,7 +39,7 @@ plan:
             contract-name: message-board
             expected-sender: ST1HGXPGWSHPHW3PNC66FWQ5VG1PFNYKBCSCQ7WMJ
             cost: 27710
-            path: contracts/message-board.clar
+            path: contracts/message-board-v2.clar
             anchor-block-only: true
             clarity-version: 4
       epoch: "3.3"
