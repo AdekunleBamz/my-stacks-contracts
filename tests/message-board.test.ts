@@ -19,7 +19,7 @@ describe("example tests", () => {
     )
 
     const messageCount = simnet.getDataVar("message-board", "message-count");
-    const stackTime = confirmation.events[1].data.value["stack-time"];
+      const stackTime = confirmation.events[1].data.value.value["stack-time"];
     
     expect(confirmation.result).toHaveClarityType(ClarityType.ResponseOk);
     expect(confirmation.result).toBeOk(messageCount);    
@@ -32,6 +32,74 @@ describe("example tests", () => {
       message: Cl.stringUtf8(content),
       time: Cl.uint(currentBurnBlockHeight),
       "stack-time": stackTime,
+    });
+  });
+
+  it("rate-limits posting multiple messages in the same burn block", () => {
+    // First post should succeed
+    const first = simnet.callPublicFn(
+      "message-board",
+      "add-message",
+      [Cl.stringUtf8("First")],
+      address1
+    );
+    expect(first.result).toHaveClarityType(ClarityType.ResponseOk);
+
+    // Second post in same burn block should fail with ERR_RATE_LIMITED (u1008)
+    const second = simnet.callPublicFn(
+      "message-board",
+      "add-message",
+      [Cl.stringUtf8("Second")],
+      address1
+    );
+    expect(second.result).toBeErr(Cl.uint(1008));
+  });
+
+  it("allows owner to configure message fee and interval; blocks non-owner", () => {
+    const nonOwnerSetFee = simnet.callPublicFn(
+      "message-board",
+      "set-message-fee",
+      [Cl.uint(2)],
+      address1
+    );
+    expect(nonOwnerSetFee.result).toBeErr(Cl.uint(1005));
+
+    const setFee = simnet.callPublicFn(
+      "message-board",
+      "set-message-fee",
+      [Cl.uint(2)],
+      deployer
+    );
+    expect(setFee.result).toBeOk(Cl.uint(2));
+
+    const setInterval = simnet.callPublicFn(
+      "message-board",
+      "set-min-post-interval",
+      [Cl.uint(0)],
+      deployer
+    );
+    expect(setInterval.result).toBeOk(Cl.uint(0));
+
+    const post = simnet.callPublicFn(
+      "message-board",
+      "add-message",
+      [Cl.stringUtf8("Paid post")],
+      address1
+    );
+    expect(post.result).toHaveClarityType(ClarityType.ResponseOk);
+
+    // withdraw should transfer 2 sbtc since fee was set to 2
+    simnet.mineEmptyBurnBlocks(1);
+    const withdraw = simnet.callPublicFn(
+      "message-board",
+      "withdraw-funds",
+      [],
+      deployer
+    );
+    expect(withdraw.result).toBeOk(Cl.bool(true));
+    expect(withdraw.events[0].event).toBe("ft_transfer_event");
+    expect(withdraw.events[0].data).toMatchObject({
+      amount: '2',
     });
   });
 
